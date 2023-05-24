@@ -21,5 +21,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('quickstart/', include(('quickstart.urls', 'quickstart'),
-                                namespace='quickstart'))
+                                namespace='quickstart')),
+    path('authentication/', include(('authentication.urls', 'authentication'),
+                                    namespace='authentication')),
 ]

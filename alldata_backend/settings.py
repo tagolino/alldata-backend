@@ -40,7 +40,8 @@ INSTALLED_APPS = [
 ]
 
 ADDITIONAL_LIBRARIES = [
-    'rest_framework'
+    'oauth2_provider',
+    'rest_framework',
 ]
 
 INSTALLED_APPS += ADDITIONAL_LIBRARIES
@@ -48,7 +49,7 @@ INSTALLED_APPS += ADDITIONAL_LIBRARIES
 START_APPS = [
     'appuser',
     'authentication',
-    'quickstart'
+    'quickstart',
 ]
 
 INSTALLED_APPS += START_APPS
@@ -136,8 +137,19 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+OAUTH2_PROVIDER = {
+    # this is the list of available scopes
+    'SCOPES': {'read': 'Read scope', 'write': 'Write scope'},
+    'ACCESS_TOKEN_EXPIRE_SECONDS': 12 * 60 * 60,  # 12 hour
+    'REFRESH_TOKEN_EXPIRE_SECONDS': 24 * 60 * 60,  # 24 hour
+    'OAUTH_DELETE_EXPIRED': True,
+}
+
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
+    ),
     'PAGE_SIZE': 10
 }
 
