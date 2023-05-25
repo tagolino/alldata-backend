@@ -49,7 +49,6 @@ INSTALLED_APPS += ADDITIONAL_LIBRARIES
 START_APPS = [
     'appuser',
     'authentication',
-    'quickstart',
 ]
 
 INSTALLED_APPS += START_APPS
