@@ -69,3 +69,21 @@ class ForgetPasswordSerializer(serializers.ModelSerializer):
                 'email': _('Atleast one in phone or email input is required')
             })
         return super().validate(attrs)
+
+
+class ResetPasswordSerializer(AuthenticationBaseSerializer):
+    confirm_password = serializers.CharField(max_length=120,
+                                             write_only=True,
+                                             required=True,
+                                             error_messages={'blank': 'Cannot be blank.'})
+
+    class Meta:
+        model = User
+        fields = ('password', 'confirm_password')
+
+    def validate(self, attrs):
+        if not attrs.get('phone') and not attrs.get('email'):
+            raise serializers.ValidationError({
+                'email': _('Atleast one in phone or email input is required')
+            })
+        return super().validate(attrs)
