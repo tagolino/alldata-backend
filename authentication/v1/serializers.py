@@ -43,3 +43,13 @@ class UserLoginSerializer(AuthenticationBaseSerializer):
     class Meta:
         model = User
         fields = ('password', 'email')
+
+
+class RegisterSerializer(AuthenticationBaseSerializer):
+    phone_regex = RegexValidator(regex=r'\d{4,30}$',
+                                 message={'blank': 'Cannot be blank.'})
+    email = serializers.EmailField(required=False, write_only=True)
+
+    class Meta:
+        model = User
+        fields = ('email',)

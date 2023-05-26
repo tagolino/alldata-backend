@@ -17,8 +17,9 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .serializers import UserLoginSerializer
+from .serializers import RegisterSerializer, UserLoginSerializer
 from alldata_backend.utils import get_client_ip
+from appuser.models import Profile
 
 
 class CustomModelBackend(ModelBackend):
@@ -183,3 +184,29 @@ class LoginAPI(CustomModelBackend, APIView):
 
         return Response({'errors': error_msg},
                         status=status.HTTP_400_BAD_REQUEST)
+
+
+class RegisterAPI(APIView):
+    permission_classes = (AllowAny,)
+
+    def post(self, request):
+        data = request.data.copy()
+
+        serializer = RegisterSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+
+        if data.get('email'):
+            user, created = User.objects.get_or_create(email=data['email'])
+            if not created:
+                return Response({'errors': _('E-mail already exists.')},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+            user.email = data['email']
+
+        user.set_password(data['password'])
+        user.is_active = True
+        user.save()
+
+        _get, created = Profile.objects.get_or_create(
+            user=user, register_ip=str(get_client_ip(request)),)
+        return Response({'msg': 'Successfully registered to the system.'}, status=status.HTTP_201_CREATED)
