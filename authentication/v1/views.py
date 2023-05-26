@@ -17,7 +17,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .serializers import RegisterSerializer, UserLoginSerializer
+from .serializers import ForgetPasswordSerializer, RegisterSerializer, UserLoginSerializer
 from alldata_backend.utils import get_client_ip
 from appuser.models import Profile
 
@@ -210,3 +210,36 @@ class RegisterAPI(APIView):
         _get, created = Profile.objects.get_or_create(
             user=user, register_ip=str(get_client_ip(request)),)
         return Response({'msg': 'Successfully registered to the system.'}, status=status.HTTP_201_CREATED)
+
+
+class ForgetPasswordAPI(APIView):
+    """
+    @brief      Class for Forget Password.
+    """
+    permission_classes = (AllowAny,)
+
+    def post(self, request):
+        data = request.data.copy()
+        serializer = ForgetPasswordSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+
+        if data.get('email'):
+            try:
+                user = User.objects.get(email=data['email'])
+            except User.DoesNotExist:
+                return Response({'errors': 'E-mail does not exist in the system'},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+            if user and not user.is_active:
+                return Response({'errors': 'E-mail does not exist in the system'},
+                                status=status.HTTP_400_BAD_REQUEST)
+        else:
+            response = Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return response
+        auth_token = AuthToken(user)
+        token = auth_token.create_token()
+        response = JsonResponse(
+            {'data': {'reset_password_token': token['access_token']}},
+            status=status.HTTP_200_OK)
+
+        return response

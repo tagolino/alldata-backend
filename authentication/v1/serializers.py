@@ -2,6 +2,7 @@ from django.contrib.auth import password_validation
 from django.contrib.auth.models import User
 from django.core import exceptions
 from django.core.validators import RegexValidator
+from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
 
@@ -53,3 +54,18 @@ class RegisterSerializer(AuthenticationBaseSerializer):
     class Meta:
         model = User
         fields = ('email',)
+
+
+class ForgetPasswordSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(required=False, write_only=True)
+
+    class Meta:
+        model = User
+        fields = ('email',)
+
+    def validate(self, attrs):
+        if not attrs.get('phone') and not attrs.get('email'):
+            raise serializers.ValidationError({
+                'email': _('Atleast one in phone or email input is required')
+            })
+        return super().validate(attrs)
