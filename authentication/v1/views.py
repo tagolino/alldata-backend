@@ -277,3 +277,19 @@ class ForgetPasswordAPI(APIView):
         user.save()
 
         return Response({'msg': 'Successfully changed password'}, status=status.HTTP_200_OK)
+
+
+class LogoutAPI(APIView):
+    """
+    @brief      Class for logging-out all type of users.
+    """
+    permission_classes = (AllowAny,)
+
+    def post(self, request):
+        if not request.user.is_anonymous:
+            auth = AuthToken(request.user)
+            auth.delete_tokens()
+
+            request.user.profile.is_online = False
+            request.user.profile.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
