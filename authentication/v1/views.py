@@ -17,7 +17,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .serializers import ForgetPasswordSerializer, RegisterSerializer, UserLoginSerializer
+from .serializers import ForgetPasswordSerializer, RegisterSerializer, ResetPasswordSerializer, UserLoginSerializer
 from alldata_backend.utils import get_client_ip
 from appuser.models import Profile
 
@@ -227,19 +227,53 @@ class ForgetPasswordAPI(APIView):
             try:
                 user = User.objects.get(email=data['email'])
             except User.DoesNotExist:
-                return Response({'errors': 'E-mail does not exist in the system'},
-                                status=status.HTTP_400_BAD_REQUEST)
+                return Response({'errors': 'E-mail does not exist in the system'}, status=status.HTTP_400_BAD_REQUEST)
 
             if user and not user.is_active:
-                return Response({'errors': 'E-mail does not exist in the system'},
-                                status=status.HTTP_400_BAD_REQUEST)
+                return Response({'errors': 'E-mail does not exist in the system'}, status=status.HTTP_400_BAD_REQUEST)
         else:
             response = Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             return response
         auth_token = AuthToken(user)
         token = auth_token.create_token()
-        response = JsonResponse(
-            {'data': {'reset_password_token': token['access_token']}},
+        response = JsonResponse({'data': {'reset_password_token': token['access_token']}},
             status=status.HTTP_200_OK)
 
         return response
+
+    def put(self, request):
+        if request.user.is_anonymous:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        data = request.data.copy()
+
+        serializer = ResetPasswordSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+
+        filters = {}
+        if data.get('email'):
+            filters['email'] = data['email']
+
+        try:
+            user = User.objects.get(**filters)
+            if user and not user.is_active:
+                return Response({'errors': 'Account is disabled.'}, status=status.HTTP_400_BAD_REQUEST)
+        except User.DoesNotExist:
+            return Response({'errors': 'User does not exist in the system'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if user and not user.is_active:
+            return Response({'errors': 'Inactive user.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not user.username == request.user.username:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        if not data['password'] == data['confirm_password']:
+            return Response({'errors': 'Password didn\'t match'}, status=status.HTTP_400_BAD_REQUEST)
+
+        auth = AuthToken(request.user)
+        auth.delete_tokens()
+
+        user.set_password(data['password'])
+        user.save()
+
+        return Response({'msg': 'Successfully changed password'}, status=status.HTTP_200_OK)
