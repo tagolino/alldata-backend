@@ -38,6 +38,7 @@ class Profile(models.Model):
                             max_length=255)
     login_ip = models.CharField(max_length=128, null=True, blank=True)
     register_ip = models.CharField(max_length=128, null=True, blank=True)
+    is_online = models.BooleanField(default=False)
     
     def __str__(self):
         if self.user:
